@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	// "github.com/cipepser/graphql-sample/server"
+	"github.com/cipepser/graphql-sample/server"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/tinrab/graphql-realtime-chat/server"
+	// "github.com/tinrab/graphql-realtime-chat/server"
 )
 
 type config struct {
