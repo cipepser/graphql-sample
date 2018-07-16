@@ -18,6 +18,12 @@ import (
 	"github.com/vektah/gqlgen/handler"
 )
 
+type contextKey string
+
+const (
+	userContextKey = contextKey("user")
+)
+
 type graphQLServer struct {
 	redisClient     *redis.Client
 	messageChannels map[string]chan Message
@@ -25,7 +31,6 @@ type graphQLServer struct {
 	mutex           sync.Mutex
 }
 
-// NewGraphQLServer .
 func NewGraphQLServer(redisURL string) (*graphQLServer, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr: redisURL,
@@ -43,7 +48,6 @@ func NewGraphQLServer(redisURL string) (*graphQLServer, error) {
 	}, nil
 }
 
-// Serve .
 func (s *graphQLServer) Serve(route string, port int) error {
 	mux := http.NewServeMux()
 	mux.Handle(
@@ -62,34 +66,24 @@ func (s *graphQLServer) Serve(route string, port int) error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
 }
 
-// Mutation_postMessage .
 func (s *graphQLServer) Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error) {
 	err := s.createUser(user)
 	if err != nil {
 		return nil, err
 	}
 
-	// Notify new user joined
-	s.mutex.Lock()
-	for _, ch := range s.userChannels {
-		ch <- user
-	}
-	s.mutex.Unlock()
-
-	// Create Message
+	// Create message
 	m := Message{
 		ID:        ksuid.New().String(),
 		CreatedAt: time.Now().UTC(),
 		Text:      text,
 		User:      user,
 	}
-
-	mj, err := json.Marshal(m)
+	mj, _ := json.Marshal(m)
 	if err := s.redisClient.LPush("messages", mj).Err(); err != nil {
 		log.Println(err)
 		return nil, err
 	}
-
 	// Notify new message
 	s.mutex.Lock()
 	for _, ch := range s.messageChannels {
@@ -99,7 +93,6 @@ func (s *graphQLServer) Mutation_postMessage(ctx context.Context, user string, t
 	return &m, nil
 }
 
-// Query_messages .
 func (s *graphQLServer) Query_messages(ctx context.Context) ([]Message, error) {
 	cmd := s.redisClient.LRange("messages", 0, -1)
 	if cmd.Err() != nil {
@@ -115,15 +108,11 @@ func (s *graphQLServer) Query_messages(ctx context.Context) ([]Message, error) {
 	for _, mj := range res {
 		var m Message
 		err = json.Unmarshal([]byte(mj), &m)
-		if err != nil {
-			return nil, err
-		}
 		messages = append(messages, m)
 	}
 	return messages, nil
 }
 
-// Query_users .
 func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
 	cmd := s.redisClient.SMembers("users")
 	if cmd.Err() != nil {
@@ -138,7 +127,6 @@ func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
 	return res, nil
 }
 
-// Subscription_messagePosted .
 func (s *graphQLServer) Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error) {
 	err := s.createUser(user)
 	if err != nil {
@@ -162,7 +150,6 @@ func (s *graphQLServer) Subscription_messagePosted(ctx context.Context, user str
 	return messages, nil
 }
 
-// Subscription_userJoined .
 func (s *graphQLServer) Subscription_userJoined(ctx context.Context, user string) (<-chan string, error) {
 	err := s.createUser(user)
 	if err != nil {
@@ -187,6 +174,7 @@ func (s *graphQLServer) Subscription_userJoined(ctx context.Context, user string
 }
 
 func (s *graphQLServer) createUser(user string) error {
+	// Upsert user
 	if err := s.redisClient.SAdd("users", user).Err(); err != nil {
 		return err
 	}
