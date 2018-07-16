@@ -20,7 +20,6 @@ func main() {
 	}
 
 	s, err := server.NewGraphQLServer(cfg.RedisURL)
-	panic("aaa")
 	if err != nil {
 		log.Fatal(err)
 	}
