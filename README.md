@@ -8,12 +8,12 @@
 ❯ go get -u github.com/vektah/gqlgen
 ```
 
-2018/07/16現在だと互換性が崩れている。
-いったん以下でやったけど、まだ`generated.go`がだめ。
+上記でうまくいかなかった（go.modに記載するバージョンと異なっていた）ので、以下でやった。
 
 ```sh
 ❯ git clone https://github.com/vektah/gqlgen.git
-❯ git checkout 325c45a40b41dec948abd1138cc8f84ae815b285
+❯ git checkout 40d9a11be108
+❯ go install
 ```
 
 ### 実装
