@@ -5,16 +5,18 @@ import (
 	// 	"encoding/json"
 	// 	"fmt"
 	// 	"log"
-	// 	"net/http"
+
+	"fmt"
+	"net/http"
 	"sync"
 	"time"
 	//
 	"github.com/go-redis/redis"
-	// 	"github.com/gorilla/websocket"
-	// 	"github.com/rs/cors"
+	"github.com/gorilla/websocket"
+	"github.com/rs/cors"
+	"github.com/vektah/gqlgen/handler"
 	// 	"github.com/segmentio/ksuid"
 	"github.com/tinrab/retry"
-	// 	"github.com/vektah/gqlgen/handler"
 )
 
 // type contextKey string
@@ -24,7 +26,7 @@ import (
 // )
 //
 
-type graphQLserver struct {
+type graphQLServer struct {
 	redisClient     *redis.Client
 	messageChannels map[string]chan Message
 	userChannels    map[string]chan string
@@ -32,7 +34,7 @@ type graphQLserver struct {
 }
 
 // NewGraphQLServer returns new graphQLServer with redisURL.
-func NewGraphQLServer(redisURL string) (*graphQLserver, error) {
+func NewGraphQLServer(redisURL string) (*graphQLServer, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr: redisURL,
 	})
@@ -42,7 +44,7 @@ func NewGraphQLServer(redisURL string) (*graphQLserver, error) {
 		return err
 	})
 
-	return &graphQLserver{
+	return &graphQLServer{
 		redisClient:     client,
 		messageChannels: map[string]chan Message{},
 		userChannels:    map[string]chan string{},
@@ -50,26 +52,28 @@ func NewGraphQLServer(redisURL string) (*graphQLserver, error) {
 	}, nil
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-//
-// func (s *graphQLServer) Serve(route string, port int) error {
-// 	mux := http.NewServeMux()
-// 	mux.Handle(
-// 		route,
-// 		handler.GraphQL(MakeExecutableSchema(s),
-// 			handler.WebsocketUpgrader(websocket.Upgrader{
-// 				CheckOrigin: func(r *http.Request) bool {
-// 					return true
-// 				},
-// 			}),
-// 		),
-// 	)
-// 	mux.Handle("/playground", handler.Playground("GraphQL", route))
-//
-// 	handler := cors.AllowAll().Handler(mux)
-// 	return http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
-// }
+func (s *graphQLServer) Serve(route string, port int) error {
+	mux := http.NewServeMux()
+	mux.Handle(
+		route,
+		handler.GraphQL(MakeExecutableSchema(s),
+			handler.WebsocketUpgrader(
+				websocket.Upgrader{
+					CheckOrigin: func(r *http.Request) bool {
+						return true
+					},
+				},
+			),
+		),
+	)
 
+	mux.Handle("/playground", handler.Playground("GraphQL", route))
+
+	handler := cors.AllowAll().Handler(mux)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 // TODO: implement methods for Resolvers
 // type Resolvers interface {
 // 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
