@@ -1,62 +1,56 @@
 package server
 
-// TODO: implement methods for Resolvers
-// type Resolvers interface {
-// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
-// 	Query_messages(ctx context.Context) ([]Message, error)
-// 	Query_users(ctx context.Context) ([]string, error)
-//
-// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
-// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
-// }
+import (
+	// 	context "context"
+	// 	"encoding/json"
+	// 	"fmt"
+	// 	"log"
+	// 	"net/http"
+	"sync"
+	"time"
+	//
+	"github.com/go-redis/redis"
+	// 	"github.com/gorilla/websocket"
+	// 	"github.com/rs/cors"
+	// 	"github.com/segmentio/ksuid"
+	"github.com/tinrab/retry"
+	// 	"github.com/vektah/gqlgen/handler"
+)
 
-/////////////////////////////////////////////////////////////////////////////////////
-// import (
-// 	context "context"
-// 	"encoding/json"
-// 	"fmt"
-// 	"log"
-// 	"net/http"
-// 	"sync"
-// 	"time"
-//
-// 	"github.com/go-redis/redis"
-// 	"github.com/gorilla/websocket"
-// 	"github.com/rs/cors"
-// 	"github.com/segmentio/ksuid"
-// 	"github.com/tinrab/retry"
-// 	"github.com/vektah/gqlgen/handler"
-// )
-//
 // type contextKey string
 //
 // const (
 // 	userContextKey = contextKey("user")
 // )
 //
-// type graphQLServer struct {
-// 	redisClient     *redis.Client
-// 	messageChannels map[string]chan Message
-// 	userChannels    map[string]chan string
-// 	mutex           sync.Mutex
-// }
-//
-// func NewGraphQLServer(redisURL string) (*graphQLServer, error) {
-// 	client := redis.NewClient(&redis.Options{
-// 		Addr: redisURL,
-// 	})
-//
-// 	retry.ForeverSleep(2*time.Second, func(_ int) error {
-// 		_, err := client.Ping().Result()
-// 		return err
-// 	})
-// 	return &graphQLServer{
-// 		redisClient:     client,
-// 		messageChannels: map[string]chan Message{},
-// 		userChannels:    map[string]chan string{},
-// 		mutex:           sync.Mutex{},
-// 	}, nil
-// }
+
+type graphQLserver struct {
+	redisClient     *redis.Client
+	messageChannels map[string]chan Message
+	userChannels    map[string]chan string
+	mutex           sync.Mutex
+}
+
+// NewGraphQLServer returns new graphQLServer with redisURL.
+func NewGraphQLServer(redisURL string) (*graphQLserver, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr: redisURL,
+	})
+
+	retry.ForeverSleep(2*time.Second, func(_ int) error {
+		_, err := client.Ping().Result()
+		return err
+	})
+
+	return &graphQLserver{
+		redisClient:     client,
+		messageChannels: map[string]chan Message{},
+		userChannels:    map[string]chan string{},
+		mutex:           sync.Mutex{},
+	}, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 //
 // func (s *graphQLServer) Serve(route string, port int) error {
 // 	mux := http.NewServeMux()
@@ -75,7 +69,17 @@ package server
 // 	handler := cors.AllowAll().Handler(mux)
 // 	return http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
 // }
+
+// TODO: implement methods for Resolvers
+// type Resolvers interface {
+// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
+// 	Query_messages(ctx context.Context) ([]Message, error)
+// 	Query_users(ctx context.Context) ([]string, error)
 //
+// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
+// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
+// }
+
 // func (s *graphQLServer) Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error) {
 // 	err := s.createUser(user)
 // 	if err != nil {
