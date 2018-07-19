@@ -73,16 +73,20 @@ func (s *graphQLServer) Serve(route string, port int) error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// TODO: implement methods for Resolvers
-// type Resolvers interface {
-// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
-// 	Query_messages(ctx context.Context) ([]Message, error)
-// 	Query_users(ctx context.Context) ([]string, error)
-//
-// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
-// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
-// }
+func (s *graphQLServer) createUser(user string) error {
+	// Upsert user
+	if err := s.redisClient.SAdd("users", user).Err(); err != nil {
+		return err
+	}
+
+	// Notify new user joined
+	s.mutex.Lock()
+	for _, ch := range s.userChannels {
+		ch <- user
+	}
+	s.mutex.Unlock()
+	return nil
+}
 
 // func (s *graphQLServer) Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error) {
 // 	err := s.createUser(user)
@@ -111,6 +115,22 @@ func (s *graphQLServer) Serve(route string, port int) error {
 // 	return &m, nil
 // }
 //
+
+// func (s *graphQLServer) Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error) {
+//
+// }
+
+/////////////////////////////////////////////////////////////////////////////////////
+// TODO: implement methods for Resolvers
+// type Resolvers interface {
+// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
+// 	Query_messages(ctx context.Context) ([]Message, error)
+// 	Query_users(ctx context.Context) ([]string, error)
+//
+// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
+// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
+// }
+
 // func (s *graphQLServer) Query_messages(ctx context.Context) ([]Message, error) {
 // 	cmd := s.redisClient.LRange("messages", 0, -1)
 // 	if cmd.Err() != nil {
@@ -191,16 +211,3 @@ func (s *graphQLServer) Serve(route string, port int) error {
 // 	return users, nil
 // }
 //
-// func (s *graphQLServer) createUser(user string) error {
-// 	// Upsert user
-// 	if err := s.redisClient.SAdd("users", user).Err(); err != nil {
-// 		return err
-// 	}
-// 	// Notify new user joined
-// 	s.mutex.Lock()
-// 	for _, ch := range s.userChannels {
-// 		ch <- user
-// 	}
-// 	s.mutex.Unlock()
-// 	return nil
-// }
