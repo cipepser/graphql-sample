@@ -1,11 +1,6 @@
 package server
 
 import (
-	// 	context "context"
-	// 	"encoding/json"
-	// 	"fmt"
-	// 	"log"
-
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	//
+
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -21,13 +16,6 @@ import (
 	"github.com/tinrab/retry"
 	"github.com/vektah/gqlgen/handler"
 )
-
-// type contextKey string
-//
-// const (
-// 	userContextKey = contextKey("user")
-// )
-//
 
 type graphQLServer struct {
 	redisClient     *redis.Client
