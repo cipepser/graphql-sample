@@ -8,7 +8,7 @@ COPY go.mod .
 COPY vendor vendor
 COPY server server
 COPY main.go .
-RUN vgo build -o /go/bin/app .
+RUN CC=gcc vgo build -o /go/bin/app .
 
 FROM alpine:3.7
 WORKDIR /usr/bin
