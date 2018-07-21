@@ -154,17 +154,28 @@ func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
 	return res, nil
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// TODO: implement methods for Resolvers
-// type Resolvers interface {
-// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
-// 	Query_messages(ctx context.Context) ([]Message, error)
-// 	Query_users(ctx context.Context) ([]string, error)
-//
-// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
-// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
-// }
-//
+func (s *graphQLServer) Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error) {
+	if err := s.createUser(user); err != nil {
+		return nil, err
+	}
+
+	// Create new channel for request
+	messages := make(chan Message, 1)
+	s.mutex.Lock()
+	s.messageChannels[user] = messages
+	s.mutex.Unlock()
+
+	// Delete channel when done
+	go func() {
+		<-ctx.Done()
+		s.mutex.Lock()
+		delete(s.messageChannels, user)
+		s.mutex.Unlock()
+	}()
+
+	return messages, nil
+}
+
 // func (s *graphQLServer) Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error) {
 // 	err := s.createUser(user)
 // 	if err != nil {
@@ -186,6 +197,17 @@ func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
 // 	}()
 //
 // 	return messages, nil
+// }
+
+/////////////////////////////////////////////////////////////////////////////////////
+// TODO: implement methods for Resolvers
+// type Resolvers interface {
+// 	Mutation_postMessage(ctx context.Context, user string, text string) (*Message, error)
+// 	Query_messages(ctx context.Context) ([]Message, error)
+// 	Query_users(ctx context.Context) ([]string, error)
+//
+// 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
+// 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
 // }
 //
 // func (s *graphQLServer) Subscription_userJoined(ctx context.Context, user string) (<-chan string, error) {
