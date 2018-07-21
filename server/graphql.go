@@ -138,6 +138,22 @@ func (s *graphQLServer) Query_messages(ctx context.Context) ([]Message, error) {
 	return messages, nil
 }
 
+func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
+	cmd := s.redisClient.SMembers("users")
+	if cmd.Err() != nil {
+		log.Println(cmd.Err())
+		return nil, cmd.Err()
+	}
+
+	res, err := cmd.Result()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return res, nil
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // TODO: implement methods for Resolvers
 // type Resolvers interface {
@@ -147,20 +163,6 @@ func (s *graphQLServer) Query_messages(ctx context.Context) ([]Message, error) {
 //
 // 	Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error)
 // 	Subscription_userJoined(ctx context.Context, user string) (<-chan string, error)
-// }
-//
-// func (s *graphQLServer) Query_users(ctx context.Context) ([]string, error) {
-// 	cmd := s.redisClient.SMembers("users")
-// 	if cmd.Err() != nil {
-// 		log.Println(cmd.Err())
-// 		return nil, cmd.Err()
-// 	}
-// 	res, err := cmd.Result()
-// 	if err != nil {
-// 		log.Println(err)
-// 		return nil, err
-// 	}
-// 	return res, nil
 // }
 //
 // func (s *graphQLServer) Subscription_messagePosted(ctx context.Context, user string) (<-chan Message, error) {
