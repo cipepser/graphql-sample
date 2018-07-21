@@ -104,3 +104,4 @@ npm audit fix
 
 ## References
 * [Real-time Chat with GraphQL Subscriptions in Go](https://outcrawl.com/go-graphql-realtime-chat/)
+* [x/vgo: build defaults to clang, but go build uses gcc #23965](https://github.com/golang/go/issues/23965)
